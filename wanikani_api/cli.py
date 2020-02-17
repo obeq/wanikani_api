@@ -1,7 +1,7 @@
 import click
 from .client import Client
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 
 import csv
@@ -23,7 +23,7 @@ def main(ctx, api_key=None):
 @main.command()
 @click.pass_obj
 def reviews(wk):
-    pending = wk.assignments(available_before=datetime.now(), hidden=False)
+    pending = wk.assignments(available_before=datetime.utcnow(), hidden=False)
     click.echo('You have {} reviews waiting:'.format(len(pending)))
     for assignment in pending:
         click.echo(f'{assignment.subject.characters} ({assignment.available_at})')
