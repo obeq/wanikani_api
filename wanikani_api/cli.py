@@ -4,7 +4,7 @@ import os
 from datetime import datetime, timezone
 import json
 
-import csv
+import pandas as pd
 
 @click.group()
 @click.option('-a', '--api-key', required=False)
@@ -30,26 +30,23 @@ def reviews(wk):
 
 
 @main.command()
+@click.argument('data_type', type=click.Choice(['reviews', 'assignments', 'subjects']))
 @click.argument('csv_file', type=click.Path(writable=True, dir_okay=False))
 @click.pass_obj
-def statistics(wk, csv_file):
-    click.echo("Exporting reviews")
+def export(wk, data_type, csv_file):
+    click.echo(f"Exporting {data_type}")
 
     if os.path.exists(csv_file):
         click.confirm('File already exists, overwrite?', abort=True)
 
-    stats = wk.review_statistics()
-    
-    headers = stats[0]._resource.keys()
+    if data_type == 'reviews':
+        stats = wk.review_statistics()
+    else:
+        stats = getattr(wk, data_type)()
 
-    with open(csv_file, 'w', newline='') as csv_fd:
-        csv_writer = csv.DictWriter(csv_fd, fieldnames=headers)
-        csv_writer.writeheader()
+    rev_frame = pd.DataFrame.from_records([stat._resource for stat in stats])
 
-        with click.progressbar(stats) as bar:
-            for stat in bar:
-                csv_writer.writerow(stat._resource)
-        
+    rev_frame.to_csv(csv_file)
 
 
 if __name__ == "__main__":
